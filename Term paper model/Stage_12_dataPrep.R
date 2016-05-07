@@ -3,8 +3,6 @@
 library(tidyr)
 library(dplyr)
 
-# Hej Andreas
-
 zdata = read.csv("C:\\Users\\Andreas\\Documents\\GitHub\\DynamicProgramming_TermPaper\\simuleret data.csv", header = TRUE, sep = ",")
 
 # parameters & Initial values -----------------------------
