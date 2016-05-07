@@ -168,6 +168,22 @@ for (t in 1:n.periods) {
   }
 }
 
+
+group.obs$nr[(group.obs$type.tau == 1) & (group.obs$year.ind == 2) & (group.obs$flyt == 1)] 
+group.obs.move$nr[(group.obs.move$kom.t.1 == 4) & (group.obs.move$flyt == 1)  & (group.obs.move$type.tau == 1) & (group.obs.move$year.ind == 2)] 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # CCP of moving outside conditional on moving
 
 for (t in 1:n.periods) {
