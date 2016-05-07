@@ -93,27 +93,28 @@ group.obs.move$nr[is.na(group.obs.move$nr)] <- 0
 
 # Calculating the % share of move/stay for each type/year/hood combination (man kunne overveje et ekstra if statement for at komme af NaN)
 
-shares.moving <- array(0,dim=c(T,nr.types,nr.nhood + 1))
+shares.moving <- array(0,dim=c(nr.nhood + 1, nr.types, T))
 
 for (t in 1:T) {
   for (tau in 1:nr.types) {
-     for (k in 1:nr.nhood) {
-      
-       sum.obs <- group.obs$nr[(group.obs$nhood == k) & (group.obs$type.tau == tau) & (group.obs$year.ind == t)] 
-       sum.moving <- group.obs.move$nr[(group.obs.move$flyt == 1) & (group.obs.move$nhood == k) & (group.obs.move$type.tau == tau) & (group.obs.move$year.ind == t)] 
+     for (m in 1:nr.nhood) {
+       sum.obs <- group.obs$nr[(group.obs$nhood == m) & (group.obs$type.tau == tau) & (group.obs$year.ind == t)] 
+       sum.moving <- group.obs.move$nr[(group.obs.move$flyt == 1) & (group.obs.move$nhood == m) & 
+                                         (group.obs.move$type.tau == tau) & (group.obs.move$year.ind == t)] 
       
        if (length(sum.moving / sum.obs) == 0) {
-         shares.moving[t,tau,k] = 0 
+         shares.moving[m,tau,t] = 0 
        }
-       else if (sum.obs == 0 & sum.obs.moving > 0){
-         shares.moving[t,tau,k] = 1
+       else if (sum.obs == 0 & sum.obs.moving > 0) {
+         shares.moving[m,tau,t] = 1
        }
        else {
-         shares.moving[t,tau,k] = sum.moving / sum.obs
+         shares.moving[m,tau,t] = sum.moving / sum.obs
        }
     }
   }
 }
+
 
 # Creating the ingoing values for the likelihood estimator (the X vector) ---------------------------
 
