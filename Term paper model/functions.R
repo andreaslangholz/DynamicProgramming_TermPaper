@@ -30,26 +30,88 @@ EstimateValuefunctionsTilde <- function(shares, n.types, n.neighborhoods, n.peri
 LikelihoodOfStayDecision <- function(y, x, value.stay, value.move, initial.param, max.iteration, tolerance){
   
   b = initial.param
-  crit = 1
+  criterion = 1
+  iteration = 1
+  
   nr.vars = length(b) 
   
-  #  Calculate the CCP of staying in residence - eq (15)
-  ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b)) 
+  #  Looping over successive ML approximations by the Newton Rhapson algorithm
+  while (criterion > tolerance & iteration < max.iteration) {
+      
+    
+    #  Calculate the CCP of staying in residence - eq (15)
+    ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b)) 
+    
+    #  Take the gradient of the likelihood 
+    gradient = t(y - ccp.stay) %*% x
+    
+    #  Take the pdf of the choice probabilities which enters into the Hessian
+    ccp.pdf = ccp.stay * (1 - ccp.stay)
+    
+    w = matrix(data = rep(NaN, nr.obs * nr.vars), nrow = nr.obs, ncol = nr.vars)
+    
+    for (i in 1:nr.vars){
+      
+      w[, i] = ccp.pdf
+      
+    }
+    
+    #  Calculate the Hessian 
+    hessian = - t(w * x) %*% x
+    
+    hessian.inv = ginv(hessian)
+    
+    # Residual in the Newton - Rhapson procedure
+    newton.raps.res = - hessian.inv %*% t(gradient)
+    
+    # Newton-Rhapson optimization
+    step.size = 2
+    
+    likelihood.a = 0
+    likelihood.b = 1
+    
+    while (likelihood.b > likelihood.a) {
+      
+      step.size = step.size / 2
+      
+      b.tilde.a = b + step.size * newton.raps.res
+      b.tilde.b = b + step.size * newton.raps.res / 2
+      
+      likelihood.a = LikelihoodLogitNR(b.tilde.a, y, x, value.stay, value.move)
+      likelihood.b = LikelihoodLogitNR(b.tilde.b, y, x, value.stay, value.move)
+      
+    }
+    
+    b.tilde = b + step.size * newton.raps.res
+    b = b.tilde
+    
+    criterion = max(newton.raps.res)
+    iteration = iteration + 1
   
-  #  Take the gradient of the likelihood 
-  gradient = (y - ccp.stay) %*% x
+  }
   
-  pdf = ccp.stay * (1 - ccp.stay)
+  likelihood = LikelihoodLogitNR(b, y, x, value.stay, value.move)  
   
-  l = matrix(data = rep(1, nr.obs * nr.vars), nrow = nr.obs, ncol = nr.vars)
+  ouput = list(b, likelihood, iteration, criterion)  
   
-  hessian = - t((pdf * l) * x) %*% x 
+  return(output)
+}
+
+
+LikelihoodLogitNR <- function(b.tilde, y, x, value.stay, value.move ){
+  #  Helper function for LikelihoodOfStayDecision to compute the 
+  #  likelihood in each step of the Newton Rhapson algorithm
+  # 
+  #  Args: 
+  #  b.tilde: beta parameters with added NR residual  
   
-  hessian.inv = ginv(hessian)
+  ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b.tilde))
   
-  newton.raps.coef = - hessian.inv %*% t(gradient)
+  likelihood.contribution = y * log(ccp.stay) + (1 - y) * log(1 - ccp.stay)
   
+  likelihood = sum(likelihood.contribution)
   
-  
+  return(likelihood)
   
 }
+
