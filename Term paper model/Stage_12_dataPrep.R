@@ -3,6 +3,8 @@
 library(tidyr)
 library(dplyr)
 
+# Hej Andreas
+
 zdata = read.csv("C:\\Users\\Andreas\\Documents\\GitHub\\DynamicProgramming_TermPaper\\simuleret data.csv", header = TRUE, sep = ",")
 
 # parameters & Initial values -----------------------------
@@ -15,7 +17,7 @@ nr.nhood <- length(neighboorhood)
 
 nr.obs <- nrow(zdata)
 
-moving.costs <- 0.06  # omkostningerne ved at sælge ( undersøg om det er de samme i DK)
+moving.costs <- 0.06  # omkostningerne ved at sÃ¦lge ( undersÃ¸g om det er de samme i DK)
 
 years <- unique(zdata$current.year)
 
@@ -36,7 +38,7 @@ nr.wealthtypes = 5
 income.max = max(zdata$income)
 income.min = min(zdata$income)
 income.bins = seq(income.min, income.max, income.max / nr.incometypes)
-income.bins[nr.incometypes + 1] <- Inf                                # Det maksimale loft for indtægt i den sidste gruppe er uendeligt
+income.bins[nr.incometypes + 1] <- Inf                                # Det maksimale loft for indtÃ¦gt i den sidste gruppe er uendeligt
 
 wealth.max = max(zdata$wealth)
 wealth.min = min(zdata$wealth)
@@ -131,7 +133,7 @@ zdata$x3 = 1
 
 # x4 = Price_t * moving costs (Financial moving costs)
 
-# First we need to find the potential price in all periods OBS! Her skal laves en variable for husprisindeks afhængig af område
+# First we need to find the potential price in all periods OBS! Her skal laves en variable for husprisindeks afhÃ¦ngig af omrÃ¥de
 
 ## Midlertidig prisudvikling
 
