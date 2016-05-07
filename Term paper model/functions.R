@@ -9,8 +9,9 @@ EstimateValuefunctionsTilde <- function(shares, n.types, n.neighborhoods, n.peri
   #  shares: the share of households moving
   #  n.types
   
+  cells = n.types * (n.neighborhoods + 1) * n.periods
   
-  value.tilde <- array(rep(NaN, n.types * (n.neighborhoods + 1) * t), c(n.types, (n.neighborhoods + 1), n.periods))
+  value.tilde <- array(rep(NaN, cells), c(n.types, (n.neighborhoods + 1), n.periods))
   
   for (m in 1:n.types){
     
@@ -40,12 +41,15 @@ LikelihoodOfStayDecision <- function(y, x, value.stay, value.move, initial.param
   
   pdf = ccp.stay * (1 - ccp.stay)
   
-  h = matrix(data = rep(1, nr.obs * nr.vars), nrow = nr.obs, ncol = nr.vars)
+  l = matrix(data = rep(1, nr.obs * nr.vars), nrow = nr.obs, ncol = nr.vars)
   
-  hessian = - t((pdf * h) * x) %*% x 
+  hessian = - t((pdf * l) * x) %*% x 
   
   hessian.inv = ginv(hessian)
   
   newton.raps.coef = - hessian.inv %*% t(gradient)
+  
+  
+  
   
 }
