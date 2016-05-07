@@ -31,6 +31,8 @@ for(i in 1:nr.obs) {
   zdata$nhood[i] = which(neighboorhood == zdata$area[i])
 }
 
+
+
 # Splitting observations in types based on income and wealth ----------------------
 nr.incometypes = 5
 nr.wealthtypes = 5
