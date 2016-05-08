@@ -137,18 +137,15 @@ for (t in 1:n.periods) {
        sum.move <- group.obs$n[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)] 
        sum.tau <- group.obs.move$n[(group.obs.move$kom.t.1 == j) & (group.obs.move$flyt == 1) 
                                     & (group.obs.move$type.tau == m) & (group.obs.move$year.ind == t)] 
-                                        
-       if (sum.move == 0 & sum.tau > 0) {
+                                  
+       if (sum.tau == 0){
+         shares.moving[m,j,t] = 0.000001
+       }
+       
+       else if (sum.move == 0 & sum.tau > 0) {
          shares.moving[m,j,t] = 1
        }
-       else if (sum.tau == 0){
-         shares.moving[m,j,t] = 0.0000001
-       }
-       
-       else if(sum.move == 0 & sum.tau == 0){ ### Ikke helt korrekt, men bliver forhåbentligt bedre med flere observationer
-         shares.moving[m,j,t] = 0.0000001
-       }
-       
+
        else {
          shares.moving[m,j,t] = sum.tau / sum.move
        }
@@ -165,7 +162,7 @@ for (t in 1:n.periods) {
     sum.out <- group.obs.move.out$n[(group.obs.move.out$type.tau == m) & group.obs.move.out$year.ind == t 
                                      & (group.obs.move.out$outside == 1)]
     
-    if (length(sum.out / sum.move) == 0) {
+    if (sum.out == 0) {
       shares.moving[m, n.neighborhoods + 1, t] = 0.00000001
     }
     
@@ -173,22 +170,8 @@ for (t in 1:n.periods) {
       shares.moving[m, n.neighborhoods + 1 ,t] = 1
     }
 
-    else if(sum.move == 0 & sum.out == 0){ ### Ikke helt korrekt, men bliver forhåbentligt bedre med flere observationer
-      shares.moving[m, n.neighborhoods + 1 , t] = 0.0000001
-    }
-    
     else {
       shares.moving[m, n.neighborhoods + 1, t] = sum.out / sum.move
-    }
-  }
-}
-
-
-#Truncating to make sure log does not return -Inf values
-for (t in 1:n.periods) {
-  for (m in n.types) {
-    for (j in 1:n.neighborhoods+1) {
-      if(shares.moving[m,j,t] == 0) {shares.moving[m,j,t] = 0.0000001}
     }
   }
 }
@@ -199,7 +182,7 @@ for (t in 1:n.periods) {
 zdata$x1 = 1
 
 # X2 = income (Psychological Moving Costs)
-zdata$x2 = zdata$income
+zdata$x2 = zdata$income / 10000
 
 # x3 = 1
 zdata$x3 = 1
@@ -221,21 +204,21 @@ for (i in 1:n.obs) {
     
     zdata$price[i] = zdata$vurdering[i]
   
-    for (t in 1:(T-1)) {
+    for (t in 1:(n.periods-1)) {
       
-      zdata$price[i + t] <- zdata$price[i] * stig.vec[t] 
+      zdata$price[i + t] <- zdata$vurdering[i] * stig.vec[t] 
     }
   }
 }
 
 
-zdata$x4 = zdata$price * moving.costs
+zdata$x4 = (zdata$price / 10000) * moving.costs
 
 # x5 = price * movingcosts * income (Type specific financial moving costs)
-zdata$x5 <- zdata$price * moving.costs * zdata$income
+zdata$x5 <- (zdata$price / 10000) * moving.costs * (zdata$income / 10000)
 
 # vector of x values for logit
-x_sx <- zdata[ ,c("x1","x2","x3","x4","x5")]
+x_sx <- as.matrix(zdata[ ,c("x1","x2","x3","x4","x5")])
 
 y_sx <- zdata[ ,"flyt"]
 
@@ -243,9 +226,72 @@ setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Ter
 
 source("functions.R")
 
-valutilde = EstimateValuefunctionsTilde(shares.moving, n.types, n.neighborhoods, n.periods)
+# Calculate the closed form solutions to the valuefunctions
+valuetilde = EstimateValuefunctionsTilde(shares.moving, n.types, n.neighborhoods, n.periods)
+
+# Extracting the conditional choice of moving values for each observation
+value.move = matrix(NA, nrow = n.obs, ncol = n.neighborhoods+1)
+
+for (i in 1:n.obs) {
+  for (j in 1:(n.neighborhoods+1)) {
+        
+    m = zdata$type.tau[i]
+    t = zdata$year.ind[i]
+    
+    value.move[i,j] = valutilde[m,j,t]
+  }
+}
+
+exp.value.move <- exp(value.move)
+
+# Extracting the value of stayin for each observation
+value.stay <- matrix(NA, nrow = n.obs, ncol = 1)
+
+for (i in 1:n.obs) {
+  for (j in 1:(n.neighborhoods + 1)){
+    
+    m <- zdata$type.tau[i]
+    t <- zdata$year.ind[i]
+    
+    if(zdata$year.ind[i] == t & zdata$type.tau[i] == m & zdata$area[i] == j) {
+      value.stay[i] <- valuetilde[m, j, t]
+    }
+  }
+}
+
+exp.value.stay <- exp(value.stay)
+
+initial.param = as.matrix(c(-1, 1, 1, 1, -1))
+max.iter = 100
+tol = 0.01
+
+gamma = LikelihoodOfStayDecision(y_sx, x_sx, exp.value.stay, exp.value.move, initial.param, max.iter, tol)
 
 
+## OBS debugger til test:
 
-
-
+# #Truncating to make sure log does not return -Inf values
+# for (t in 1:n.periods) {
+#   for (m in n.types) {
+#     for (j in 1:n.neighborhoods+1) {
+#       if(shares.moving[m,j,t] == 0) {shares.moving[m,j,t] = 0.0000001}
+#     }
+#   }
+# }
+##### OBS!!!!
+#
+# 
+# # Alternativ til value.stay --- Langsom!
+# for (i in 1:n.obs) {
+#   for (t in 1:n.periods) {
+#     for (m in 1:n.types) {
+#       for (j in 1:(n.neighborhoods+1)) {
+#         if(zdata$year.ind[i] == t & zdata$type.tau[i] == m & zdata$area[i] == j) {
+#           value.stay[i] <- valuetilde[m, j, t]
+#         }
+#       }
+#     }
+#   }
+# }  
+# 
+# proc.time() - ptm
