@@ -3,7 +3,8 @@
 library(tidyr)
 library(dplyr)
 
-zdata = read.csv("C:\\Users\\Andreas\\Documents\\GitHub\\DynamicProgramming_TermPaper\\simuleret data.csv", header = TRUE, sep = ",")
+
+zdata = read.csv("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\simdata2.csv", header = TRUE, sep = ",")
 
 # parameters & Initial values -----------------------------
 
@@ -18,13 +19,14 @@ years <- unique(zdata$current.year)
 n.periods <- length(unique(zdata$current.year))
 n.neighborhoods <- length(used.areas)
 n.obs <- nrow(zdata)
+n.years <- length(years)
 
 # Cost of moving
 moving.costs <- 0.06  
 
-
 # create dummy for outside choice when estimating CCP's
-zdata$outside <- ifelse(zdata$flyt == 1 & zdata$kom.t.1 != used.areas, 1, 0)
+
+zdata$outside <- ifelse(zdata$flyt == 1 & !(zdata$kom.t.1 %in% used.areas), 1, 0)
 
 # indicators for years and neighborhoods
 for (i in 1:n.obs) {
@@ -41,11 +43,13 @@ n.incometypes = 2
 n.wealthtypes = 2
 
 # creating equal length intervals of types
+zdata$income = as.numeric(zdata$income)
 income.max = max(zdata$income)
 income.min = min(zdata$income)
 income.bins = seq(income.min, income.max, income.max / n.incometypes)
 income.bins[n.incometypes + 1] <- Inf                                # Det maksimale loft for indtÃ¦gt i den sidste gruppe er uendeligt
 
+zdata$wealth = as.numeric(zdata$wealth)
 wealth.max = max(zdata$wealth)
 wealth.min = min(zdata$wealth)
 wealth.bins = seq(wealth.min, wealth.max, wealth.max / n.wealthtypes)
@@ -78,61 +82,49 @@ n.types <- length(unique(zdata$type.tau))
 # constructing frequency tables for of each type/year combination and moving decisions
 
 # nr. of obs. in each combination
-group.obs <- tbl_df(zdata) %>%
-  group_by(type.tau, year.ind, flyt) %>% 
-  summarise(nr = n())
+group.obs <- zdata %>% count(type.tau,year.ind,flyt)
 
-fact.types <- c("type.tau","year.ind", "flyt", "nr")
-
-group.obs <- as.data.frame(lapply(group.obs[fact.types], as.factor))
+group.obs$type.tau <- as.factor(group.obs$type.tau)
+group.obs$year.ind <- as.factor(group.obs$year.ind)
+group.obs$flyt     <- as.factor(group.obs$flyt)
 
 full.grid = expand.grid(type.tau = levels(as.factor(zdata$type.tau)), year.ind = levels(as.factor(zdata$year.ind)), 
                         flyt = levels(as.factor(zdata$flyt)))
 
-group.obs <- left_join(full.grid,group.obs)
+group.obs <- left_join(full.grid, group.obs)
 
-group.obs$nr <- as.numeric(group.obs$nr)
-
-group.obs$nr[is.na(group.obs$nr)] <- 0
+group.obs$n[is.na(group.obs$n)] <- 0
 
 # nr. of obs. moving
+group.obs.move <- zdata %>% count(type.tau,year.ind,flyt, kom.t.1)
 
-group.obs.move <- tbl_df(zdata) %>%
-  group_by(type.tau, year.ind, kom.t.1, flyt) %>% 
-  summarise(nr = n())
-
-fact.types <- c("type.tau","year.ind","flyt","kom.t.1", "nr")
-
-group.obs.move <- as.data.frame(lapply(group.obs.move[fact.types], as.factor))
+group.obs.move$type.tau <- as.factor(group.obs.move$type.tau)
+group.obs.move$year.ind <- as.factor(group.obs.move$year.ind)
+group.obs.move$flyt     <- as.factor(group.obs.move$flyt)
+group.obs.move$kom.t.1  <- as.factor(group.obs.move$kom.t.1)
 
 full.grid = expand.grid(type.tau = levels(as.factor(zdata$type.tau)), year.ind = levels(as.factor(zdata$year.ind)),
                         kom.t.1 = levels(as.factor(zdata$kom.t.1)), flyt = levels(as.factor(zdata$flyt)))
 
 group.obs.move <- left_join(full.grid,group.obs.move)
 
-group.obs.move$nr <- as.numeric(group.obs.move$nr)
-
-group.obs.move$nr[is.na(group.obs.move$nr)] <- 0
+group.obs.move$n[is.na(group.obs.move$n)] <- 0
 
 # nr. of obs moving outside the chosen areas
 
-group.obs.move.out <- tbl_df(zdata) %>%
-  group_by(type.tau, year.ind, outside) %>% 
-  summarise(nr = n())
+group.obs.move.out <- zdata %>% count(type.tau,year.ind,flyt, outside)
 
-fact.types <- c("type.tau","year.ind", "nr", "outside")
-
-group.obs.move.out <- as.data.frame(lapply(group.obs.move.out[fact.types], as.factor))
+group.obs.move.out$type.tau <- as.factor(group.obs.move.out$type.tau)
+group.obs.move.out$year.ind <- as.factor(group.obs.move.out$year.ind)
+group.obs.move.out$flyt     <- as.factor(group.obs.move.out$flyt)
+group.obs.move.out$outside  <- as.factor(group.obs.move.out$outside)
 
 full.grid = expand.grid(type.tau = levels(as.factor(zdata$type.tau)), year.ind = levels(as.factor(zdata$year.ind)), 
                         outside = levels(as.factor(zdata$outside)))
 
 group.obs.move.out <- left_join(full.grid, group.obs.move.out)
 
-group.obs.move.out$nr <- as.numeric(group.obs.move.out$nr)
-
-group.obs.move.out$nr[is.na(group.obs.move.out$nr)] <- 0
-
+group.obs.move.out$n[is.na(group.obs.move.out$n)] <- 0
 
 # Finding the CCP's
 shares.moving <- array(0,dim=c(n.types,n.neighborhoods + 1, n.periods))
@@ -142,15 +134,11 @@ for (t in 1:n.periods) {
   for (m in 1:n.types) {
      for (j in 1:n.neighborhoods) {
        
-       sum.move <- group.obs$nr[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)] 
-       sum.tau <- group.obs.move$nr[(group.obs.move$kom.t.1 == j) & (group.obs.move$flyt == 1) 
+       sum.move <- group.obs$n[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)] 
+       sum.tau <- group.obs.move$n[(group.obs.move$kom.t.1 == j) & (group.obs.move$flyt == 1) 
                                     & (group.obs.move$type.tau == m) & (group.obs.move$year.ind == t)] 
-                                         
-       if (length(sum.tau / sum.move) == 0) {
-         shares.moving[m,j,t] = 0.0000001
-       }
-       
-       else if (sum.move == 0 & sum.tau > 0) {
+                                        
+       if (sum.move == 0 & sum.tau > 0) {
          shares.moving[m,j,t] = 1
        }
        else if (sum.tau == 0){
@@ -169,27 +157,12 @@ for (t in 1:n.periods) {
 }
 
 
-group.obs$nr[(group.obs$type.tau == 1) & (group.obs$year.ind == 2) & (group.obs$flyt == 1)] 
-group.obs.move$nr[(group.obs.move$kom.t.1 == 4) & (group.obs.move$flyt == 1)  & (group.obs.move$type.tau == 1) & (group.obs.move$year.ind == 2)] 
-
-
-
-
-
-
-
-
-
-
-
-
-
 # CCP of moving outside conditional on moving
 
 for (t in 1:n.periods) {
   for (m in 1:n.types) {
-    sum.move <- group.obs$nr[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)]
-    sum.out <- group.obs.move.out$nr[(group.obs.move.out$type.tau == m) & group.obs.move.out$year.ind == t 
+    sum.move <- group.obs$n[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)]
+    sum.out <- group.obs.move.out$n[(group.obs.move.out$type.tau == m) & group.obs.move.out$year.ind == t 
                                      & (group.obs.move.out$outside == 1)]
     
     if (length(sum.out / sum.move) == 0) {
@@ -199,17 +172,23 @@ for (t in 1:n.periods) {
     else if (sum.move == 0 & sum.out > 0) {
       shares.moving[m, n.neighborhoods + 1 ,t] = 1
     }
-    
-    else if (sum.tau == 0) {
-      shares.moving[m, n.neighborhoods + 1, t] = 0.0000001
-    }
-    
+
     else if(sum.move == 0 & sum.out == 0){ ### Ikke helt korrekt, men bliver forhåbentligt bedre med flere observationer
       shares.moving[m, n.neighborhoods + 1 , t] = 0.0000001
     }
     
     else {
       shares.moving[m, n.neighborhoods + 1, t] = sum.out / sum.move
+    }
+  }
+}
+
+
+#Truncating to make sure log does not return -Inf values
+for (t in 1:n.periods) {
+  for (m in n.types) {
+    for (j in 1:n.neighborhoods+1) {
+      if(shares.moving[m,j,t] == 0) {shares.moving[m,j,t] = 0.0000001}
     }
   }
 }
@@ -259,5 +238,14 @@ zdata$x5 <- zdata$price * moving.costs * zdata$income
 x_sx <- zdata[ ,c("x1","x2","x3","x4","x5")]
 
 y_sx <- zdata[ ,"flyt"]
+
+setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
+
+source("functions.R")
+
+valutilde = EstimateValuefunctionsTilde(shares.moving, n.types, n.neighborhoods, n.periods)
+
+
+
 
 
