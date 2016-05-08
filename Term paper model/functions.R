@@ -40,7 +40,7 @@ LikelihoodOfStayDecision <- function(y, x, value.stay, value.move, initial.param
       
     
     #  Calculate the CCP of staying in residence - eq (15)
-    ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b)) 
+    ccp.stay = value.stay / (value.stay + rowSums(value.move) * exp(x %*% b)) 
     
     #  Take the gradient of the likelihood 
     gradient = t(y - ccp.stay) %*% x
@@ -48,7 +48,7 @@ LikelihoodOfStayDecision <- function(y, x, value.stay, value.move, initial.param
     #  Take the pdf of the choice probabilities which enters into the Hessian
     ccp.pdf = ccp.stay * (1 - ccp.stay)
     
-    w = matrix(data = rep(NaN, nr.obs * nr.vars), nrow = nr.obs, ncol = nr.vars)
+    w = matrix(data = rep(NaN, n.obs * nr.vars), nrow = n.obs, ncol = nr.vars)
     
     for (i in 1:nr.vars){
       
@@ -92,7 +92,7 @@ LikelihoodOfStayDecision <- function(y, x, value.stay, value.move, initial.param
   
   likelihood = LikelihoodLogitNR(b, y, x, value.stay, value.move)  
   
-  ouput = list(b, likelihood, iteration, criterion)  
+  output = list(b, likelihood, iteration, criterion)  
   
   return(output)
 }
@@ -105,7 +105,7 @@ LikelihoodLogitNR <- function(b.tilde, y, x, value.stay, value.move ){
   #  Args: 
   #  b.tilde: beta parameters with added NR residual  
   
-  ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b.tilde))
+  ccp.stay = value.stay / (value.stay + rowSums(value.move) * exp(x %*% b.tilde))
   
   likelihood.contribution = y * log(ccp.stay) + (1 - y) * log(1 - ccp.stay)
   

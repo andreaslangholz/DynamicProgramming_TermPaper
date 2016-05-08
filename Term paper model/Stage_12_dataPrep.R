@@ -2,6 +2,7 @@
 
 library(tidyr)
 library(dplyr)
+library(MASS)
 
 
 zdata = read.csv("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\simdata2.csv", header = TRUE, sep = ",")
@@ -261,17 +262,36 @@ for (i in 1:n.obs) {
 
 exp.value.stay <- exp(value.stay)
 
-initial.param = as.matrix(c(-1, 1, 1, 1, -1))
-max.iter = 100
-tol = 0.01
+initial.param = as.matrix(c(-2, 0.02,0.1, -0.2, 2))
+max.iter = 1000
+tol = 0.001
 
 gamma = LikelihoodOfStayDecision(y_sx, x_sx, exp.value.stay, exp.value.move, initial.param, max.iter, tol)
 
+gamma$
 
-## OBS debugger til test:
 
-# #Truncating to make sure log does not return -Inf values
-# for (t in 1:n.periods) {
+LikelihoodLogitNR(initial.param,y_sx,x_sx,exp.value.stay,exp.value.move)
+
+# 
+# exp.xb = exp(x_sx %*% initial.param)
+# 
+# exp.xb
+# 
+# rowSums(exp.value.move) * exp.xb
+# 
+# str(exp.value.move)
+# 
+# 
+# 
+# str(value.move)
+# 
+# str(exp.xb)
+# 
+# ## OBS debugger til test:
+# 
+# # #Truncating to make sure log does not return -Inf values
+# # for (t in 1:n.periods) {
 #   for (m in n.types) {
 #     for (j in 1:n.neighborhoods+1) {
 #       if(shares.moving[m,j,t] == 0) {shares.moving[m,j,t] = 0.0000001}
