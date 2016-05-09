@@ -215,22 +215,12 @@ for (i in 1:n.obs) {
   }
 }
 
-
 zdata$x4 = (zdata$price / 10000) * moving.costs
 
 # x5 = price * movingcosts * income (Type specific financial moving costs)
 zdata$x5 <- (zdata$price / 10000) * moving.costs * (zdata$income / 10000)
 
-# vector of x values for logit
+# vector of x values for MLE
 x_sx <- as.matrix(zdata[ ,c("x1","x2","x3","x4","x5")])
 
 y_sx <- zdata[ ,"flyt"]
-
-# setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
-# 
-# source("functions.R")
-# 
-# # Calculate the closed form solutions to the valuefunctions
-# valuetilde = EstimateValuefunctionsTilde(shares, n.types, n.neighborhoods, n.periods)
-# 
-# # Extracting the conditional choice of moving values for each observation

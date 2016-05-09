@@ -19,8 +19,10 @@ source("Stage_12_dataPrep.R")
 # Estimation of step 1 & 2 - Deriving gamma parameter values from maximum likelihood
 source("Estimation of step 1 and 2.R")
 
-# Preparation of step 3
+# Preparation of step 3 
 source()
 
-# Estimation of step 3
+
+
+# Estimation of step 3 - Decomposing per period utility
 source()
