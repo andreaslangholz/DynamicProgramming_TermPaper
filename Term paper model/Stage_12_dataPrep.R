@@ -6,6 +6,8 @@ library(MASS)
 
 # parameters & Initial values -----------------------------
 
+zdata = read.csv("",sep = ",", header = TRUE)
+
 # The areas under investigation in the model
 used.areas = c(1:5) # Skal instilles til de kommuner vi gerne vil have med
 
@@ -18,7 +20,7 @@ n.periods <- length(unique(zdata$current.year))
 n.neighborhoods <- length(used.areas)
 nr.nhood <- length(used.areas)
 n.obs <- nrow(zdata)
-nr.obs <- n.obs
+nr.obs <- n.obs 
 n.years <- length(years)
 
 # Cost of moving
@@ -38,24 +40,25 @@ for(i in 1:n.obs) {
 
 # ------------------------Splitting observations in types based on income and wealth ----------------------
 # Nr of types in each bin
-n.incometypes = 2
-n.wealthtypes = 2
+n.incometypes = 3
+n.wealthtypes = 3
 
 # creating equal length intervals of types
 # Income
 zdata$income = as.numeric(zdata$income)
 income.max = max(zdata$income)
 income.min = min(zdata$income)
-income.bins = seq(income.min, income.max, income.max / n.incometypes)
-income.bins[n.incometypes + 1] <- Inf                                # Det maksimale loft for indtægt i den sidste gruppe er uendeligt
+income.bins = seq(0, income.max, income.max / (n.incometypes - 1))         
+income.bins[n.incometypes + 1] <- Inf   # The loft on the last income group is infinite
 
 # Wealth
 zdata$wealth = as.numeric(zdata$wealth)
 wealth.max = max(zdata$wealth)
 wealth.min = min(zdata$wealth)
-wealth.bins = seq(wealth.min, wealth.max, wealth.max / n.wealthtypes)
-wealth.bins[n.wealthtypes + 1] <- Inf                                 # det maksimale loft for formue i det sidste led er uendeligt
+wealth.bins = seq(0, wealth.max, wealth.max / (n.wealthtypes - 1))
+wealth.bins[n.wealthtypes + 1] <- Inf   # The loft on the last income group is infinite
 
+# Total number of types
 n.types <- n.wealthtypes * n.incometypes
 
 # Categorizing the observations in their respective types
@@ -73,7 +76,6 @@ for (i in 1:n.obs) {
   }
  } 
 }
-
 
 # New number of types, as we cant loop over types without content ## OBS Tjek lige om det her step er korrekt
 n.types <- length(unique(zdata$type.tau))
@@ -111,7 +113,6 @@ group.obs.move <- left_join(full.grid,group.obs.move)
 group.obs.move$n[is.na(group.obs.move$n)] <- 0
 
 # nr. of obs moving outside the chosen areas
-
 group.obs.move.out <- zdata %>% count(type.tau,year.ind,flyt, outside)
 
 group.obs.move.out$type.tau <- as.factor(group.obs.move.out$type.tau)
