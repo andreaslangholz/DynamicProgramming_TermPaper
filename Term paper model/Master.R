@@ -1,7 +1,7 @@
 
 # Masters
 
-setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
+setwd("C:\\Users\\Andreas\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
 
 
 library(tidyr)
