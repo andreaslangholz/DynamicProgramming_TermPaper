@@ -19,7 +19,9 @@ years <- unique(zdata$current.year)
 # Counting the different vairables
 n.periods <- length(unique(zdata$current.year))
 n.neighborhoods <- length(used.areas)
+nr.nhood <- length(used.areas)
 n.obs <- nrow(zdata)
+nr.obs <- n.obs
 n.years <- length(years)
 
 # Cost of moving
@@ -44,12 +46,14 @@ n.incometypes = 2
 n.wealthtypes = 2
 
 # creating equal length intervals of types
+# Income
 zdata$income = as.numeric(zdata$income)
 income.max = max(zdata$income)
 income.min = min(zdata$income)
 income.bins = seq(income.min, income.max, income.max / n.incometypes)
 income.bins[n.incometypes + 1] <- Inf                                # Det maksimale loft for indtægt i den sidste gruppe er uendeligt
 
+# Wealth
 zdata$wealth = as.numeric(zdata$wealth)
 wealth.max = max(zdata$wealth)
 wealth.min = min(zdata$wealth)
@@ -81,7 +85,6 @@ n.types <- length(unique(zdata$type.tau))
 # -------------Creating the Conditional Choice Probabilities by splitting into time, neighborhoods and years -------------------
 
 # constructing frequency tables for of each type/year combination and moving decisions
-
 # nr. of obs. in each combination
 group.obs <- zdata %>% count(type.tau,year.ind,flyt)
 
@@ -128,7 +131,7 @@ group.obs.move.out <- left_join(full.grid, group.obs.move.out)
 group.obs.move.out$n[is.na(group.obs.move.out$n)] <- 0
 
 # Finding the CCP's
-shares.moving <- array(0,dim=c(n.types,n.neighborhoods + 1, n.periods))
+shares <- array(0,dim=c(n.types,n.neighborhoods + 1, n.periods))
 
 # CCP of moving to neighboorhood j conditional on moving
 for (t in 1:n.periods) {
@@ -140,15 +143,15 @@ for (t in 1:n.periods) {
                                     & (group.obs.move$type.tau == m) & (group.obs.move$year.ind == t)] 
                                   
        if (sum.tau == 0){
-         shares.moving[m,j,t] = 0.000001
+         shares[m,j,t] = 0.000001
        }
        
        else if (sum.move == 0 & sum.tau > 0) {
-         shares.moving[m,j,t] = 1
+         shares[m,j,t] = 1
        }
 
        else {
-         shares.moving[m,j,t] = sum.tau / sum.move
+         shares[m,j,t] = sum.tau / sum.move
        }
     }
   }
@@ -164,15 +167,15 @@ for (t in 1:n.periods) {
                                      & (group.obs.move.out$outside == 1)]
     
     if (sum.out == 0) {
-      shares.moving[m, n.neighborhoods + 1, t] = 0.00000001
+      shares[m, n.neighborhoods + 1, t] = 0.00000001
     }
     
     else if (sum.move == 0 & sum.out > 0) {
-      shares.moving[m, n.neighborhoods + 1 ,t] = 1
+      shares[m, n.neighborhoods + 1 ,t] = 1
     }
 
     else {
-      shares.moving[m, n.neighborhoods + 1, t] = sum.out / sum.move
+      shares[m, n.neighborhoods + 1, t] = sum.out / sum.move
     }
   }
 }
@@ -223,39 +226,11 @@ x_sx <- as.matrix(zdata[ ,c("x1","x2","x3","x4","x5")])
 
 y_sx <- zdata[ ,"flyt"]
 
-setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
-
-source("functions.R")
-
-# Calculate the closed form solutions to the valuefunctions
-valuetilde = EstimateValuefunctionsTilde(shares.moving, n.types, n.neighborhoods, n.periods)
-
-# Extracting the conditional choice of moving values for each observation
-value.move = matrix(NA, nrow = n.obs, ncol = n.neighborhoods+1)
-
-for (i in 1:n.obs) {
-  for (j in 1:(n.neighborhoods+1)) {
-        
-    m = zdata$type.tau[i]
-    t = zdata$year.ind[i]
-    
-    value.move[i,j] = valutilde[m,j,t]
-  }
-}
-
-exp.value.move <- exp(value.move)
-
-# Extracting the value of stayin for each observation
-value.stay <- matrix(NA, nrow = n.obs, ncol = 1)
-
-for (i in 1:n.obs) {
-  for (j in 1:(n.neighborhoods + 1)){
-    
-    m <- zdata$type.tau[i]
-    t <- zdata$year.ind[i]
-    
-    if(zdata$year.ind[i] == t & zdata$type.tau[i] == m & zdata$area[i] == j) {
-      value.stay[i] <- valuetilde[m, j, t]
-    }
-  }
-}
+# setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
+# 
+# source("functions.R")
+# 
+# # Calculate the closed form solutions to the valuefunctions
+# valuetilde = EstimateValuefunctionsTilde(shares, n.types, n.neighborhoods, n.periods)
+# 
+# # Extracting the conditional choice of moving values for each observation
