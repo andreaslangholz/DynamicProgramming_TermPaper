@@ -40,7 +40,7 @@ LikelihoodOfStayDecision <- function(y, x, value.stay, value.move, initial.param
       
     
     #  Calculate the CCP of staying in residence - eq (15)
-    ccp.stay = value.stay / (value.stay + rowSums(value.move) * exp(x %*% b)) 
+    ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b)) 
     
     #  Take the gradient of the likelihood 
     gradient = t(y - ccp.stay) %*% x
@@ -105,7 +105,7 @@ LikelihoodLogitNR <- function(b.tilde, y, x, value.stay, value.move ){
   #  Args: 
   #  b.tilde: beta parameters with added NR residual  
   
-  ccp.stay = value.stay / (value.stay + rowSums(value.move) * exp(x %*% b.tilde))
+  ccp.stay = value.stay / (value.stay + value.move * exp(x %*% b.tilde))
   
   likelihood.contribution = y * log(ccp.stay) + (1 - y) * log(1 - ccp.stay)
   
