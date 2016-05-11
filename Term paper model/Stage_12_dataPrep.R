@@ -4,9 +4,10 @@ library(tidyr)
 library(dplyr)
 library(MASS)
 
+
 # parameters & Initial values -----------------------------
 
-zdata = read.csv("",sep = ",", header = TRUE)
+zdata = read.csv("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\simdata2.csv",sep = ",", header = TRUE)
 
 # The areas under investigation in the model
 used.areas = c(1:5) # Skal instilles til de kommuner vi gerne vil have med
@@ -42,25 +43,24 @@ for(i in 1:n.obs) {
 # Nr of types in each bin
 n.incometypes = 3
 n.wealthtypes = 3
-
+n.types = n.wealthtypes * n.incometypes
+  
 # creating equal length intervals of types
 # Income
 zdata$income = as.numeric(zdata$income)
 income.max = max(zdata$income)
 income.min = min(zdata$income)
-income.bins = seq(0, income.max, income.max / (n.incometypes - 1))         
+income.bins = seq(0, income.max, income.max / (n.incometypes))         
 income.bins[n.incometypes + 1] <- Inf   # The loft on the last income group is infinite
 
 # Wealth
 zdata$wealth = as.numeric(zdata$wealth)
 wealth.max = max(zdata$wealth)
 wealth.min = min(zdata$wealth)
-wealth.bins = seq(0, wealth.max, wealth.max / (n.wealthtypes - 1))
+wealth.bins = seq(0, wealth.max, wealth.max / (n.wealthtypes))
 wealth.bins[n.wealthtypes + 1] <- Inf   # The loft on the last income group is infinite
 
 # Total number of types
-n.types <- n.wealthtypes * n.incometypes
-
 # Categorizing the observations in their respective types
 type.matrix <- as.data.frame(matrix(1:n.types, n.wealthtypes, n.incometypes))
 
@@ -77,9 +77,19 @@ for (i in 1:n.obs) {
  } 
 }
 
-# New number of types, as we cant loop over types without content ## OBS Tjek lige om det her step er korrekt
-n.types <- length(unique(zdata$type.tau))
+# The different types and there respective income/wealth combinations for use in stage 3 estimation
+type.comb = as.data.frame(matrix(0,n.types,3))
 
+k = 0
+for (i in 1:n.incometypes) {
+  for (j in 1:n.wealthtypes) {
+    k = k + 1
+    type.comb[k, 1] = income.bins[i]
+    type.comb[k, 2] = wealth.bins[j]
+    type.comb[k, 3] = type.matrix[j,i]
+  }
+}
+type.comb <- setNames(type.comb, c("income","wealth","type.tau"))
 # -------------Creating the Conditional Choice Probabilities by splitting into time, neighborhoods and years -------------------
 
 # constructing frequency tables for of each type/year combination and moving decisions
@@ -138,8 +148,10 @@ for (t in 1:n.periods) {
        sum.move <- group.obs$n[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)] 
        sum.tau  <- group.obs.move$n[(group.obs.move$kom.t.1 == j) & (group.obs.move$flyt == 1) 
                                     & (group.obs.move$type.tau == m) & (group.obs.move$year.ind == t)] 
-                                  
-       if (sum.tau == 0){
+       if (length(sum.tau) == 0) {
+         shares[m,j,t] = 0.000001
+       }                         
+       else if (sum.tau == 0){
          shares[m,j,t] = 0.000001
        }
        
@@ -154,7 +166,6 @@ for (t in 1:n.periods) {
   }
 }
 
-
 # CCP of moving outside conditional on moving
 
 for (t in 1:n.periods) {
@@ -162,8 +173,10 @@ for (t in 1:n.periods) {
     sum.move <- group.obs$n[(group.obs$type.tau == m) & (group.obs$year.ind == t) & (group.obs$flyt == 1)]
     sum.out  <- group.obs.move.out$n[(group.obs.move.out$type.tau == m) & group.obs.move.out$year.ind == t 
                                      & (group.obs.move.out$outside == 1)]
-    
-    if (sum.out == 0) {
+    if (length(sum.tau) == 0) {
+      shares[m,n.neighborhoods,t] = 0.000001
+    }                         
+    else if (sum.out == 0) {
       shares[m, n.neighborhoods + 1, t] = 0.00000001
     }
     

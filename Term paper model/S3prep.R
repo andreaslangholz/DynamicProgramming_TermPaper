@@ -1,4 +1,6 @@
 
+install.packages("dummies")
+library("dummies")
 
 # OBS! Fra dette skridt bruger de i estimationen kun de 3 indkomstgrupper
 # de gerne vil finde MWP fra
@@ -7,65 +9,68 @@
 
 gamma <- c(-9.5, 0.02, 0.1, -0.2, 0.006) # will be given by former estimations
 
-gammafmc <- rep(gamma[1:2], n.types)
-gammapmc <- rep(gamma[4:5], n.types)
+#Splitting gamma into FMC and PMC
+gamma.fmc <- gamma[1:2]
+gamma.pmc <- gamma[4:5]
 
-type.comb = matrix(0,n.types,2)
-k = 0
-for (i in 1:n.wealthtypes) {
-  for (j in 1:n.incometypes) {
-  k = k + 1
-  type.comb[k,1] = wealth.bins[i]
-  type.comb[k,2] = income.bins[j]
+# We retrieve the mtau values and time invarient moving costs
+m.tau   <- rep(0,n.types)
+pmc.inv <- matrix(0, n.types ,1)
+
+for (m in 1:n.types){
+  m.tau[m]   <- (gamma.fmc[1] * type.comb[m,"wealth"] + gamma.fmc[2] * type.comb[m,"income"]) * type.comb[m, "wealth"]
+  pmc.inv[m] <- (gamma.pmc[1] * type.comb[m,"wealth"] + gamma.pmc[2] * type.comb[m,"income"])
+}
+
+## Obs Her skal besluttes vorvidt vi ønsker at bruge alle typeværdier
+## eller trække enkelte ud af sættet til MWP regressionerne
+
+# Simulate Nhood matrix
+df.crime     <- matrix(0,n.neighborhoods,n.periods)
+df.pollution <- matrix(0,n.neighborhoods,n.periods)
+
+for (j in 1:n.neighborhoods) {
+  for (t in 1:n.periods){
+   if (t == 1) {
+     
+     df.pollution[j, t] = runif(1,1,10)
+     df.crime[j,t]     = runif(1,10,1000)
+     
+   } else {
+     
+     df.pollution[j, t] = df.pollution[j, t - 1] + rnorm(1,0,2) 
+     df.crime[j, t]     = df.crime[j, t - 1] + rnorm(1,0,100)
+     
+   }
   }
 }
 
+# Reshape to vectors containing all Nhoods in sequential times
 
+crime.vec = as.matrix(as.vector(df.crime))
+poll.vec = as.matrix(as.vector(df.pollution))
 
+# Create time and nhoods dummies
 
+n.lags = 2
 
-temp =[];
-for h = 1:numtype 
-temp = [temp ones(MSb,1).*(ZvalsbS(:,3)==h) ZvalsbS(:,2).*(ZvalsbS(:,3)==h)];
-end    
-gammafmctau = temp*gammafmc;
+dummy <- rep(c(1:n.neighborhoods), n.periods)
+dummy <- dummy(temp.dum[(n.lags * n.neighborhoods + 1):length(temp.dum)])
 
-mtau = zeros(MSb,1);
-for m =1:MSb
-mtau(m) = gammafmctau(m)*(ZvalsbS(m,1));
+time = dummy
+dummy.time <- c((n.lags+1):n.periods)
+dummy.time <- time * as.vector(kronecker(temp.tdum,rep(1,n.neighborhoods)))
+    
+# Find the mean price level for all years
+meanprices <- data.frame(matrix(0,nrow = n.neighborhoods, ncol = n.periods))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+for (t in 1:n.periods) {
+  for (m in 1:n.neighborhoods) {
+    temp <- subset(zdata, year.ind == t & nhood == m)
+    meanprices[m,t] = mean(temp$price)
+    
+  }
+}
 
 
 

@@ -1,14 +1,17 @@
 
 # Masters
 
-setwd("C:\\Users\\Andreas\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
-
+setwd("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model")
 
 library(tidyr)
 library(dplyr)
 library(MASS)
+library(dummies)
 
 rm(list = ls())
+
+# Parameters
+beta <- 0.95
 
 # Load functions used in estimations
 source("functions.R")
