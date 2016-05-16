@@ -115,3 +115,55 @@ LikelihoodLogitNR <- function(b.tilde, y, x, value.stay, value.move ){
   
 }
 
+
+DrawResiduals <- function(ndraws, residuals) {
+  #  Draws residuals from the given distributions obtained by the valuefunction and price regressions. 
+  #  Uses John Kennans (2006) Approximations of Continuous Distributions, to derive the
+  #  approximation of the empirical distributions.
+  #
+  #  Args:
+  #  ndraws: number of draws from the distribution
+  #  residuals: The emperical residuals obtained by the regressions.
+  
+  n <- nrow(residuals)
+
+  # Evaluate whether the number of draws exceeds the number of given residuals. 
+  # If TRUE, se actual residuals in draws and fill out with approximations.
+  if(ndraws >= n) {
+    n1 <- floor(ndraws / n)
+    
+    # Multiply empirical residuals to fillout as much as possible
+    A <-  kronecker(matrix(1, n1, 1), residuals)
+    
+    # Test if there is are draws left that needs to be approximated
+    rest <- ndraws - (n1 * n)
+    
+    if(rest > 0) {
+      
+      # Apply John Kennan approximation
+      B <- matrix(0, rest, 1)
+      
+      for (i in 1:rest) {
+        F.approx1 <- (2 * i - 1) / (2 * rest)
+        B[i] <- quantile(residuals, F.approx1)
+      }
+      
+      # Return full set
+      draws = rbind(A, B)
+    } else {
+      draws = A
+    }
+    
+  # If number of draws is lower than the number of residuals given, approximate all draws from distribution
+  } else {
+    
+    draws <- matrix(0, ndraws,1)
+    for (i in 1:ndraws) {
+      
+      F.approx2 <- (2 * i - 1) / (2 * ndraws)
+      draws[i] <- quantile(residuals, F.approx2)
+      
+    }
+  }
+  return(draws)
+}

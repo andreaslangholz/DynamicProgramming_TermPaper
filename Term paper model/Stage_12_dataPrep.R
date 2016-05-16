@@ -62,11 +62,12 @@ wealth.bins[n.wealthtypes + 1] <- Inf   # The loft on the last income group is i
 
 # Total number of types
 # Categorizing the observations in their respective types
-type.matrix <- as.data.frame(matrix(1:n.types, n.wealthtypes, n.incometypes))
+type.matrix <- as.data.frame(t(matrix(1:n.types, n.wealthtypes, n.incometypes)))
 
 for (i in 1:n.obs) {
-  for (j in 1:n.incometypes) {
+  
     for (w in 1:n.wealthtypes) {
+      for (j in 1:n.incometypes) {
       
       if(zdata$income[i] >= income.bins[j] & zdata$income[i] < income.bins[j + 1]
        & zdata$wealth[i] >= wealth.bins[w] & zdata$wealth[i] < wealth.bins[w + 1]) 
@@ -81,15 +82,16 @@ for (i in 1:n.obs) {
 type.comb = as.data.frame(matrix(0,n.types,3))
 
 k = 0
-for (i in 1:n.incometypes) {
+
   for (j in 1:n.wealthtypes) {
+    for (i in 1:n.incometypes) {
     k = k + 1
-    type.comb[k, 1] = income.bins[i]
-    type.comb[k, 2] = wealth.bins[j]
+    type.comb[k, 1] = wealth.bins[j]
+    type.comb[k, 2] = income.bins[i]
     type.comb[k, 3] = type.matrix[j,i]
   }
 }
-type.comb <- setNames(type.comb, c("income","wealth","type.tau"))
+type.comb <- setNames(type.comb, c("wealth","income","type.tau"))
 # -------------Creating the Conditional Choice Probabilities by splitting into time, neighborhoods and years -------------------
 
 # constructing frequency tables for of each type/year combination and moving decisions
@@ -198,8 +200,9 @@ zdata$x1 = 1
 # X2 = income (Psychological Moving Costs)
 zdata$x2 = zdata$income / 10000
 
-# x3 = 1
-zdata$x3 = 1
+# x3 time trend
+
+zdata$x3 = zdata$year.ind
 
 # x4 = Price_t * moving costs (Financial moving costs)
 

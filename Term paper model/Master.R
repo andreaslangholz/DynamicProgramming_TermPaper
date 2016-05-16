@@ -12,6 +12,7 @@ rm(list = ls())
 
 # Parameters
 beta <- 0.95
+Euler <- 0.577215665
 
 # Load functions used in estimations
 source("functions.R")
