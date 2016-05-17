@@ -1,6 +1,7 @@
 # OBS! Fra dette skridt bruger de i estimationen kun de 3 indkomstgrupper
 # de gerne vil finde MWP fra
 
+registerDoParallel(cores = 4)
 ## Estimation step 3 prep - Recoveringm values and prep for getting back valuef
 
 gamma <- c(-9.5, 0.02, 0.1, -0.2, 0.006) # will be given by former estimations
@@ -30,29 +31,25 @@ for (m in 1:n.types){
 ## eller trække enkelte ud af sættet til MWP regressionerne
 
 # Simulate Nhood matrix
-df.crime     <- matrix(0,n.neighborhoods,n.periods)
-df.pollution <- matrix(0,n.neighborhoods,n.periods)
 
-for (j in 1:n.neighborhoods) {
-  for (t in 1:n.periods){
-   if (t == 1) {
-     
-     df.pollution[j, t] = runif(1,1,10)
-     df.crime[j,t]     = runif(1,10,1000)
-     
-   } else {
-     
-     df.pollution[j, t] = df.pollution[j, t - 1] + rnorm(1,0,2) 
-     df.crime[j, t]     = df.crime[j, t - 1] + rnorm(1,0,100)
-     
-   }
-  }
-}
+df.tyv  <- read.csv("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model\\amenities\\tyveri.csv",sep = ";", header = TRUE)
+df.traf <- read.csv("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model\\amenities\\uheldstæthed.csv", sep = ";", header = TRUE)
+df.udg  <- read.csv("C:\\Users\\Langholz\\Documents\\GitHub\\DynamicProgramming_TermPaper\\Term paper model\\amenities\\udg.kultur+sport.csv", sep = ";", header = TRUE)
 
-# Reshape to vectors containing all Nhoods in sequential times
+df.traf$kom.nr <- as.numeric(df.traf$kom.nr)
 
-crime.vec <- as.matrix(as.vector(df.crime))
-poll.vec  <- as.matrix(as.vector(df.pollution))
+setorder(df.traf, kom.nr)
+setorder(df.tyv, kom.nr)
+setorder(df.udg, Kom.nr)
+
+# Sort out names + data before 1998
+df.tyv  <- df.tyv[,-c(1:7,21:24)] 
+df.traf <- df.traf[,-c(1:2, 16:18)]
+df.udg  <- df.udg[,-c(1:7, 21:25)]
+
+crime.vec <- as.matrix(as.vector(df.tyv))
+traffic.vec  <- as.matrix(as.vector(df.traf))
+expense.vec <- as.matrix(as.vector(df.udg))
 
 # Create time and nhoods dummies
 n.lags = 2
@@ -77,9 +74,8 @@ for (t in 1:n.periods) {
   }
 }
 
-
-
-
+meanprice.vec = as.matrix(as.vector(meanprices))
+length(meanprice.vec)
 
 
 

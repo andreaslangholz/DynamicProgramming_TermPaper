@@ -28,14 +28,14 @@ for (m in 1:n.types) {
   lag1 <- rbind(matrix(0, nrow = n.neighborhoods,ncol(temp)), temp[1:(nrow(temp) - n.neighborhoods), ])
   lag2 <- rbind(matrix(0, nrow = (n.neighborhoods * 2),ncol(temp)), temp[1:(nrow(temp) - n.neighborhoods * 2), ])
   lags <- cbind(lag1, lag2)
-
+  
   Y <- temp[(2 * n.neighborhoods + 1):nrow(temp), 1]
   X <- cbind(dummy, dummy.time, lags[(2 * n.neighborhoods + 1):nrow(lags), ])
   
   beta.m[, m] <- solve(t(X) %*% X) %*% t(X) %*% Y
   res.m[, m]  <- Y - X %*% beta.m[ ,m]
-
-# We find the parameters for the outside option, as we do not have other regressors than the valuefunctions
+  
+  # We find the parameters for the outside option, as we do not have other regressors than the valuefunctions
   
   val.vec.out = as.matrix(as.vector(value.functions.tilde[m, n.neighborhoods + 1, ]))
   
@@ -92,7 +92,7 @@ resoutsidedraws <- matrix(nrow = n.types, ncol = R)
 pricedraws      <- matrix(1, R)
 
 for (m in 1:n.types) {
- 
+  
   resinsidedraws[m, ]  <- DrawResiduals(R, res.m[, m])
   resoutsidedraws[m, ] <- DrawResiduals(R, res.o[, m])
   
@@ -108,10 +108,10 @@ type.val.out <- array(NA, dim = c(n.types, n.periods))
 for (m in 1:n.types) {
   for (t in 1:n.periods) {
     type.val[m, , t] <- t(rbind(t(value.functions.tilde[m,1:n.neighborhoods,t]), df.crime[1:n.neighborhoods, t], df.traf[n.neighborhoods, t],
-                              df.udg[n.neighborhoods,t], meanprices[n.neighborhoods,t])) %*% alpha11[, m] +
-                        t(rbind(t(value.functions.tilde[m,1:n.neighborhoods,max(t - 1,1)]), df.crime[1:n.neighborhoods, max(t - 1,1)], df.pollution[n.neighborhoods, max(t - 1,1)],
-                                df.udg[n.neighborhoods,max(t - 1,1)], meanprices[n.neighborhoods,max(t - 1,1)]  )) %*% alpha12[, m] +
-                        kappa0[ ,m] + kappa1[ ,m] * (t + 1)
+                                df.udg[n.neighborhoods,t], meanprices[n.neighborhoods,t])) %*% alpha11[, m] +
+      t(rbind(t(value.functions.tilde[m,1:n.neighborhoods,max(t - 1,1)]), df.crime[1:n.neighborhoods, max(t - 1,1)], df.pollution[n.neighborhoods, max(t - 1,1)],
+              df.udg[n.neighborhoods,max(t - 1,1)], meanprices[n.neighborhoods,max(t - 1,1)]  )) %*% alpha12[, m] +
+      kappa0[ ,m] + kappa1[ ,m] * (t + 1)
     
     type.val.out[m, t] <- beta.o[3,m] * value.functions.tilde[m, n.neighborhoods + 1,t] + 
       beta.o[4,m] * value.functions.tilde[m,n.neighborhoods + 1, max(t-1,1)] +
@@ -139,8 +139,8 @@ for(t in 2:n.periods) {
   
   # Estimate prices of neighborhoods given the amenities at time t
   price.time.t <- (cbind(meanprices[, t], df.crime[, t], df.traf[, t], df.udg[, t])) %*% gamma11 + 
-                  (cbind(meanprices[, t - 1], df.crime[, t - 1], df.traf[, t - 1], df.udg[, t - 1])) %*% gamma12 + omega0 + omega1 * (t + 1)
-
+    (cbind(meanprices[, t - 1], df.crime[, t - 1], df.traf[, t - 1], df.udg[, t - 1])) %*% gamma12 + omega0 + omega1 * (t + 1)
+  
   # Estimate psychological moving costs
   exp.pmc.time <- exp(pmc.inv + mc.timetrend * t)
   
@@ -155,7 +155,7 @@ for(t in 2:n.periods) {
   
   # Draw residuals from valueregressions
   value.res <- array(0,dim = c(n.types, n.neighborhoods + 1, R))
-
+  
   for (m in n.types) {
     
     # Inside decision draws
