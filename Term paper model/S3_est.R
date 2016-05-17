@@ -59,7 +59,7 @@ res.price  <- Y - X %*% beta.price
 
 ##### Preparing simulation of the expected value functions based on regressions -----
 # Number of draws for integration
-R = 10000
+R = 100
 
 # Splitting coefficients from regressions
 
@@ -115,21 +115,19 @@ for (m in 1:n.types) {
 
 ##### Full integration over expected movements #############
 
-next.wealth.moving  <- matrix(0,n.periods,n.types)
-next.wealth.staying <- matrix(0,n.periods,n.types)
+next.wealth.moving  <- matrix(0,n.neighborhoods,n.types)
+next.wealth.staying <- matrix(0,n.neighborhoods, n.types)
 
-type.stay <- matrix(0,n.wealthtypes,n.types)
-type.move <- matrix(0,n.wealthtypes,n.types)
+type.stay <- matrix(0,n.neighborhoods,n.types)
+type.move <- matrix(0,n.neighborhoods,n.types)
 
 exp.sum   <- array(NA, dim = dim(value.functions.tilde)) 
 utiltilde <- array(NA, dim = dim(value.functions.tilde)) 
 total.sum <- array(NA, dim = c(n.types,n.neighborhoods * n.types, R))
 
-R = 100
-
 for (t in 2:n.periods) {
   
-  # Estimat prices of neighborhoods given the amenities at time t
+  # Estimate prices of neighborhoods given the amenities at time t
   price.time.t <- (cbind(meanprices[, t], df.pollution[, t], df.crime[, t])) %*% gamma11 + 
                   (cbind(meanprices[, t - 1], df.pollution[, t - 1], df.crime[, t - 1])) %*% gamma12 + omega0 + omega1 * (t + 1)
 
@@ -176,6 +174,9 @@ for (t in 2:n.periods) {
     # take the exponential of the values
     expvalue <- exp(value.t[,1:n.neighborhoods]) 
     
+    # Summed values of all neighborhoods
+    sum.exp.val.pmc <- rowSums(expvalue) / exp.pmc.time
+    
     # Find the added value from the neighborhood amenities for moving and staying and multiply with the parameters
     f.moving       <- price.and.res - meanprices[,2] - moving.costs * price.and.res
     egamma.fmoving <- exp(f.moving %*% gammafmctau)
@@ -187,23 +188,19 @@ for (t in 2:n.periods) {
     for(m in 1:n.types){
       
       # Find the new wealth bins for the given decisions
-      next.wealth.moving[,m]  <- round(min(wealth.max, max(type.comb[m,1] + price.and.res - meanprices[,t] - 0.06 * price.and.res, wealth.min)))
-      next.wealth.staying[,m] <- round(min(wealth.max, max(type.comb[m,1] + price.and.res - meanprices[,t], wealth.min)))
       
-      temp.move <- findInterval(next.wealth.moving[ ,m], type.comb[, 1])
-      temp.stay <- findInterval(next.wealth.staying[ ,m], type.comb[, 1])
       
-      type.move[, m] <- which(type.comb[,1] == type.comb[temp.move[1],1])
-      type.stay[, m] <- which(type.comb[,1] == type.comb[temp.stay[1],1])
+      next.wealth.moving[, m]  <- round(pmin(wealth.max, pmax(type.comb[m,1] + price.and.res - meanprices[,t] - 0.06 * price.and.res, wealth.min)))
+      next.wealth.staying[, m] <- round(pmin(wealth.max, pmax(type.comb[m,1] + price.and.res - meanprices[,t], wealth.min)))
       
-      }  
-    
-    # Summed values of all neighborhoods
-    sum.values <- rowSums(expvalue) / exp.pmc.time
-    
-    for (m in 1:n.types){
-      temp.index <- type.stay[, m]
-      total.sum[m, ,r] <- sum.values[type.move[, m]] * egamma.fmoving[, m] + expvalue[temp.index] * egamma.fstaying[, m]
+      temp.move <- factor(findInterval(next.wealth.moving[, m], c(-Inf, quantile(zdata$wealth, probs = wealth.decil), Inf)))
+      temp.stay <- factor(findInterval(next.wealth.staying[, m], c(-Inf, quantile(zdata$wealth, probs = wealth.decil), Inf)))
+      
+      type.move[, m] <- as.numeric(as.character(temp.move))
+      type.stay[, m] <- as.numeric(as.character(temp.stay))
+      
+      # Find the total exp sums of all values from all neighborhoods for a given type/year combination with residual r
+      total.sum[m, ,r] <- sum.exp.val.pmc[type.move[, m]] * egamma.fmoving[, m] + expvalue[type.stay[, m]] * egamma.fstaying[, m]
       
     }
   }
@@ -216,13 +213,5 @@ for (t in 2:n.periods) {
 }
 
 
-#########################################
 
-d = 1/ n.incometypes
-inc.decil = seq(from = d, to = 1-d, by = d)
-
-inc.f = factor(findInterval(data$income, c(-inf, quantile(data$income, probs = inc.decil), inf)), labels = c(1:n.incometypes))
-data$income.bins = as.numeric(as.character(inc.f))
-
-#########################################
 

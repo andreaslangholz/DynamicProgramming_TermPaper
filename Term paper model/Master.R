@@ -12,7 +12,7 @@ rm(list = ls())
 
 # Parameters
 beta <- 0.95
-Euler <- 0.577215665
+euler <- 0.577215665
 
 # Load functions used in estimations
 source("functions.R")
@@ -23,10 +23,8 @@ source("Stage_12_dataPrep.R")
 # Estimation of step 1 & 2 - Deriving gamma parameter values from maximum likelihood
 source("Estimation of step 1 and 2.R")
 
-# Preparation of step 3 
-source()
-
-
+# Preparation of step 3 -
+source("S3prep.R")
 
 # Estimation of step 3 - Decomposing per period utility
-source()
+source("S3_est.R")

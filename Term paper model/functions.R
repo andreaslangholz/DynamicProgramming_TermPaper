@@ -118,8 +118,7 @@ LikelihoodLogitNR <- function(b.tilde, y, x, value.stay, value.move ){
 
 DrawResiduals <- function(ndraws, residuals) {
   #  Draws residuals from the given distributions obtained by the valuefunction and price regressions. 
-  #  Uses John Kennans (2006) Approximations of Continuous Distributions, to derive the
-  #  approximation of the empirical distributions.
+  #  Uses John Kennans (2006) Approximations of Continuous Distributions, to derive the approximation of the empirical distributions.
   #
   #  Args:
   #  ndraws: number of draws from the distribution
